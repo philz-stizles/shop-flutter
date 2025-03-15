@@ -34,18 +34,7 @@ class CartScreen extends StatelessWidget {
                       backgroundColor: Theme.of(context).primaryColor,
                     ),
                     const Spacer(),
-                    TextButton(
-                        onPressed: () {
-                          Provider.of<OrderProvider>(context, listen: false)
-                              .addOrder(
-                                  cart: cartProvider.cart.values.toList(),
-                                  totalAmount: cartProvider.cartTotalAmount);
-
-                          cartProvider.clear();
-                          Navigator.of(context)
-                              .pushNamed(OrdersScreen.routeName);
-                        },
-                        child: const Text('ORDER NOW'))
+                    OrderButton(cartProvider: cartProvider)
                   ],
                 ),
               ),
@@ -59,7 +48,7 @@ class CartScreen extends StatelessWidget {
                 var key = cartProvider.cart.keys.toList()[index];
                 return CartItemCard(
                     productId: key,
-                    id: value.id,
+                    id: value.id!,
                     title: value.title,
                     price: value.price,
                     quantity: value.quantity);
@@ -67,5 +56,46 @@ class CartScreen extends StatelessWidget {
             ))
           ],
         ));
+  }
+}
+
+class OrderButton extends StatefulWidget {
+  const OrderButton({
+    super.key,
+    required this.cartProvider,
+  });
+
+  final CartProvider cartProvider;
+
+  @override
+  State<OrderButton> createState() => _OrderButtonState();
+}
+
+class _OrderButtonState extends State<OrderButton> {
+  var _isLoading = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final navigator = Navigator.of(context);
+    return TextButton(
+        onPressed: widget.cartProvider.cartTotalAmount <= 0 || _isLoading
+            ? null
+            : () async {
+                setState(() {
+                  _isLoading = true;
+                });
+                await Provider.of<OrderProvider>(context, listen: false)
+                    .addOrderAsync(
+                        cart: widget.cartProvider.cart.values.toList(),
+                        totalAmount: widget.cartProvider.cartTotalAmount);
+                setState(() {
+                  _isLoading = false;
+                });
+                widget.cartProvider.clear();
+                navigator.pushNamed(OrdersScreen.routeName);
+              },
+        child: _isLoading
+            ? const CircularProgressIndicator()
+            : const Text('ORDER NOW'));
   }
 }

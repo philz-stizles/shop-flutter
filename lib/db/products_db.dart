@@ -1,6 +1,6 @@
 import 'package:shop/models/models.dart';
 
-var products = [
+var productTable = [
   ProductModel(
     id: 'p1',
     title: 'Red Shirt',

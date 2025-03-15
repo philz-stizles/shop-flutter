@@ -22,42 +22,40 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-        providers: [
-          ChangeNotifierProvider<AuthProvider>(create: (_) => AuthProvider()),
-          ChangeNotifierProxyProvider<AuthProvider, ProductProvider>(
-              create: (context) => ProductProvider(),
-              update: (context, authProvider, productProvider) =>
-                  productProvider!..update(authProvider.token)),
-          ChangeNotifierProvider<CartProvider>(create: (_) => CartProvider()),
-          ChangeNotifierProxyProvider<AuthProvider, OrderProvider>(
-              create: (_) => OrderProvider(),
-              update: (context, authProvider, previousOrderProvider) =>
-                  OrderProvider(
-                      authToken: authProvider.token,
-                      orders: previousOrderProvider == null
-                          ? []
-                          : previousOrderProvider.orders))
-        ],
-        child: Consumer<AuthProvider>(
+      providers: [
+        ChangeNotifierProvider<AuthProvider>(create: (_) => AuthProvider()),
+        ChangeNotifierProxyProvider<AuthProvider, ProductProvider>(
+            create: (context) => ProductProvider(),
+            update: (context, authProvider, productProvider) => productProvider!
+              ..update(
+                  authToken: authProvider.token, userId: authProvider.userId)),
+        ChangeNotifierProvider<CartProvider>(create: (_) => CartProvider()),
+        ChangeNotifierProxyProvider<AuthProvider, OrderProvider>(
+            create: (_) => OrderProvider(),
+            update: (context, authProvider, orderProvider) => orderProvider!
+              ..update(
+                  authToken: authProvider.token, userId: authProvider.userId))
+      ],
+      child: Consumer<AuthProvider>(
           builder: (context, authProvider, child) => MaterialApp(
-            debugShowCheckedModeBanner: false,
-            title: 'Flutter Demo',
-            theme: theme(),
-            home: authProvider.isAuthenticated
-                ? const DashboardScreen()
-                : FutureBuilder(
-                    future: authProvider.tryAutoLogin(),
-                    builder: (BuildContext context,
-                        AsyncSnapshot<bool> autoLoginSnapshot) {
-                      return autoLoginSnapshot.connectionState ==
-                              ConnectionState.waiting
-                          ? const SplashScreen()
-                          : const AuthScreen();
-                    },
-                  ),
-            routes: routes,
-          ),
-        ));
+                debugShowCheckedModeBanner: false,
+                title: 'Flutter Demo',
+                theme: theme(),
+                home: authProvider.isAuthenticated
+                    ? const DashboardScreen()
+                    : FutureBuilder(
+                        future: authProvider.tryAutoLogin(),
+                        builder: (BuildContext context,
+                            AsyncSnapshot<bool> autoLoginSnapshot) {
+                          return autoLoginSnapshot.connectionState ==
+                                  ConnectionState.waiting
+                              ? const SplashScreen()
+                              : const AuthScreen();
+                        },
+                      ),
+                routes: routes,
+              )),
+    );
     // return MultiProvider(
     //     providers: [
     //       ChangeNotifierProvider<AuthProvider>(create: (_) => AuthProvider()),

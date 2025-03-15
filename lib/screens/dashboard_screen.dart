@@ -1,7 +1,8 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shop/providers/cart_provider.dart';
-import 'package:shop/providers/product_provider.dart';
+import 'package:shop/providers/providers.dart';
 import 'package:shop/screens/screens.dart';
 import 'package:shop/widgets/widgets.dart';
 
@@ -17,6 +18,56 @@ enum FilterProducts { all, favorites }
 
 class _DashboardScreenState extends State<DashboardScreen> {
   var _showOnlyFavorites = false;
+  var _isInit = true;
+  var _isLoading = false;
+
+  // @override
+  // void initState() {
+  //   // Method 1:
+  //   // _isLoading = true;
+
+  //   // Provider.of<ProductProvider>(context, listen: false)
+  //   //     .fetchAndSetProducts()
+  //   //     .then((_) {
+  //   //   setState(() {
+  //   //     _isLoading = false;
+  //   //   });
+  //   // });
+
+  //   // Method 2:
+  //   // Future.delayed(Duration.zero).then((_) async {
+  //   //   setState(() {
+  //   //     _isLoading = true;
+  //   //   });
+
+  //   //   await Provider.of<ProductProvider>(context, listen: false)
+  //   //       .fetchAndSetProducts();
+
+  //   //   setState(() {
+  //   //     _isLoading = false;
+  //   //   });
+  //   // });
+  //   super.initState();
+  // }
+
+  @override
+  void didChangeDependencies() {
+    if (_isInit) {
+      setState(() {
+        _isLoading = true;
+      });
+      Provider.of<ProductProvider>(context, listen: false)
+          .fetchAndSetProducts()
+          .then((_) {
+        setState(() {
+          _isLoading = false;
+        });
+      });
+    }
+
+    _isInit = false;
+    super.didChangeDependencies();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +113,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     icon: const Icon(Icons.shopping_cart)))
           ],
         ),
-        body: ProductsGrid(showOnlyFavorites: _showOnlyFavorites),
+        body: Stack(
+          children: [
+            ProductsGrid(showOnlyFavorites: _showOnlyFavorites),
+            if (_isLoading)
+              BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 4.0, sigmaY: 4.0),
+                  child: const Opacity(
+                    opacity: 0.8,
+                    child:
+                        ModalBarrier(dismissible: false, color: Colors.black54),
+                  )),
+            if (_isLoading)
+              const Center(
+                child: CircularProgressIndicator(),
+              ),
+          ],
+        ),
         drawer: const AppDrawer());
   }
 }

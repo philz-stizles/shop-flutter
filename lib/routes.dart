@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shop/screens/screens.dart';
+import 'package:shop/widgets/widgets.dart';
 
 final Map<String, WidgetBuilder> routes = {
   AuthScreen.routeName: (_) => const AuthScreen(),
@@ -8,5 +9,6 @@ final Map<String, WidgetBuilder> routes = {
   CartScreen.routeName: (_) => const CartScreen(),
   OrdersScreen.routeName: (_) => const OrdersScreen(),
   ProductManageScreen.routeName: (_) => const ProductManageScreen(),
-  ProductEditScreen.routeName: (_) => const ProductEditScreen(),
+  ProductEditScreen.routeName: (_) =>
+      const LoadingOverlay(child: ProductEditScreen()),
 };

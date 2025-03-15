@@ -27,7 +27,9 @@ class ProductGridCard extends StatelessWidget {
         footer: GridTileBar(
             backgroundColor: Colors.black54,
             leading: IconButton(
-                onPressed: () => product.toggleIsFavorite(),
+                onPressed: () => product.toggleIsFavoriteAsync(
+                    authProvider.token!,
+                    userId: authProvider.userId!),
                 icon: Icon(
                   product.isFavorite ? Icons.favorite : Icons.favorite_border,
                   color: Theme.of(context).colorScheme.secondary,
@@ -101,7 +103,27 @@ class CartItemCard extends StatelessWidget {
           child: const Icon(Icons.delete),
         ),
         onDismissed: (direction) => cartProvider.removeByProductId(productId),
-        // confirmDismiss: (direction) {},
+        confirmDismiss: (direction) => showDialog(
+            context: context,
+            builder: (ctx) => AlertDialog(
+                  icon: Icon(Icons.remove_shopping_cart_rounded,
+                      color: Theme.of(context).colorScheme.secondary),
+                  title: const Text(
+                    'Are you sure?',
+                    textAlign: TextAlign.center,
+                  ),
+                  content: const Text(
+                      'Do you want to remove the selected item from the cart?',
+                      textAlign: TextAlign.center),
+                  actions: [
+                    TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(false),
+                        child: const Text('No')),
+                    TextButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        child: const Text('Yes'))
+                  ],
+                )),
         direction: DismissDirection.endToStart,
         key: ValueKey(id),
         child: Card(
@@ -208,8 +230,19 @@ class ProductItemCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               IconButton(
-                  onPressed: () => Navigator.of(context)
-                      .pushNamed(ProductEditScreen.routeName, arguments: id),
+                  onPressed: () async {
+                    final response = await Navigator.of(context).pushNamed(
+                        ProductEditScreen.routeName,
+                        arguments: id) as Map<String, dynamic>?;
+
+                    if (response != null &&
+                        response['status'] != null &&
+                        response['status'] == true &&
+                        response['message'] != null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(response['message'])));
+                    }
+                  },
                   icon: Icon(
                     Icons.edit,
                     color: Theme.of(context).primaryColor,
@@ -217,7 +250,7 @@ class ProductItemCard extends StatelessWidget {
               IconButton(
                   onPressed: () =>
                       Provider.of<ProductProvider>(context, listen: false)
-                          .deleteProduct(id),
+                          .deleteProductAsync(id),
                   icon: Icon(
                     Icons.delete,
                     color: Theme.of(context).colorScheme.error,
@@ -288,5 +321,30 @@ class ProductStackedCard extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class ImagePreviewCard extends StatelessWidget {
+  const ImagePreviewCard({
+    super.key,
+    this.imageUrl,
+  });
+
+  final String? imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+        width: 100,
+        height: 100,
+        child: DecoratedBox(
+          decoration:
+              BoxDecoration(border: Border.all(width: 1, color: Colors.grey)),
+          child: imageUrl == null || imageUrl!.isEmpty
+              ? const Center(
+                  child: Text('Enter a URL'),
+                )
+              : Image.network(imageUrl!, fit: BoxFit.cover),
+        ));
   }
 }

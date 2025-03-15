@@ -35,9 +35,7 @@ class AuthProvider with ChangeNotifier {
     return null;
   }
 
-  String? get userId {
-    return _userId;
-  }
+  String? get userId => _userId;
 
   Future<void> signup({required String email, required String password}) async {
     try {

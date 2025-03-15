@@ -7,46 +7,39 @@ import 'package:shop/models/models.dart';
 
 class OrderProvider with ChangeNotifier {
   final _baseUrl = dotenv.get('FIREBASE_BASE_URL');
-  final String? authToken;
+  String? _authToken;
+  String? _userId;
+  // final List<OrderItemModel> _orders = [];
   List<OrderItemModel> _orders = [];
   var isLoading = false;
 
-  OrderProvider({this.authToken, orders}) {
-    _orders = orders;
+  void update({String? authToken, String? userId}) {
+    _authToken = authToken;
+    _userId = userId;
   }
 
   List<OrderItemModel> get orders => [..._orders];
 
   int get orderProductCount => _orders.length;
 
-  Future<void> fetchOrders() async {
+  Future<void> fetchAndSetOrders() async {
     try {
-      isLoading = true;
-      notifyListeners();
-
-      final uri = '$_baseUrl/orders.json?auth=$authToken';
+      // final uri = '$_baseUrl/orders.json?auth=$_authToken';
+      final uri = '$_baseUrl/orders/$_userId.json?auth=$_authToken';
       final response = await http.get(Uri.parse(uri));
       final responseBody = json.decode(response.body) as Map<String, dynamic>?;
       if (responseBody == null) {
         return;
       }
 
-      // responseBody.forEach((key, value) {
-      //   _orders.add(OrderItemModel(
-      //       id: id,
-      //       totalAmount: totalAmount,
-      //       products: products,
-      //       orderedAt: orderedAt));
-      // });
-    } catch (e) {
-      if (kDebugMode) {
-        print(e);
-      }
-
-      rethrow;
-    } finally {
-      isLoading = false;
+      _orders = responseBody.keys
+          .map((key) => OrderItemModel.fromMap(key, responseBody[key]))
+          .toList()
+          .reversed
+          .toList();
       notifyListeners();
+    } catch (e) {
+      rethrow;
     }
   }
 
@@ -65,38 +58,23 @@ class OrderProvider with ChangeNotifier {
   Future<void> addOrderAsync(
       {required List<CartItemModel> cart, required double totalAmount}) async {
     try {
-      isLoading = true;
-      notifyListeners();
-
       // Add order to server.
-      final uri = '$_baseUrl/orders.json?auth=$authToken';
-      final timestamp = DateTime.now();
-      final response = await http.post(Uri.parse(uri),
-          body: json.encode({
-            'totalAmount': totalAmount,
-            'products': cart,
-            'orderedAt': timestamp.toIso8601String(),
-          }));
+      final newOrder = OrderItemModel(
+          totalAmount: totalAmount, products: cart, orderedAt: DateTime.now());
+      // final uri = '$_baseUrl/orders.json?auth=$_authToken';
+      final uri = '$_baseUrl/orders/$_userId.json?auth=$_authToken';
+      final response = await http.post(Uri.parse(uri), body: newOrder.toJson());
       final responseBody = json.decode(response.body) as Map<String, dynamic>?;
       if (responseBody == null) {
         return;
       }
 
       // Add order to local list.
-      // _orders.add(OrderItemModel(
-      //     id: id,
-      //     totalAmount: totalAmount,
-      //     products: cart,
-      //     orderedAt: timestamp));
-    } catch (e) {
-      if (kDebugMode) {
-        print(e);
-      }
-
-      rethrow;
-    } finally {
-      isLoading = false;
+      newOrder.id = responseBody['name'];
+      _orders.insert(0, newOrder);
       notifyListeners();
+    } catch (e) {
+      rethrow;
     }
   }
 
